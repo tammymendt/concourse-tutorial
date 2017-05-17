@@ -27,9 +27,4 @@ else
     exit_code=0
 fi
 
-# Just sleep to simulate doing something :)
-SLEEP_TIME=1
-echo "Sleeping for ${SLEEP_TIME}"
-sleep "${SLEEP_TIME}"
-
 exit "${exit_code}"

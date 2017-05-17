@@ -22,7 +22,3 @@ cd /go/src/github.com/super-app
 ## Run go tests
 go test -v
 
-# Just sleep to simulate doing something :)
-SLEEP_TIME=1
-echo "Sleeping for ${SLEEP_TIME}"
-sleep "${SLEEP_TIME}"

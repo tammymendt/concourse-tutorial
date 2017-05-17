@@ -3,7 +3,7 @@ resources:
   - name: super-app
     type: git
     source:
-      uri: https://github.com/hellofresh/concourse-tutorial.git
+      uri: https://github.com/tammymendt/concourse-tutorial.git
       branch: ci
 
 jobs:
@@ -11,15 +11,68 @@ jobs:
     plan:
     - get: super-app
       trigger: true
-    - task: Testing
+
+    - aggregate:
+      - task: lint
+        file: super-app/tutorial/scenario.1/1-list/tasks/lint.yml
+
+      - task: unit
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source: {repository: golang}
+          run:
+            path: sh
+            args:
+            - -exc
+            - |
+              ./scripts/go_deps.sh
+              ./scripts/test_unit.sh
+            dir: super-app/
+          inputs:
+            - name: super-app
+
+  - name: Build & Integration Tests
+    plan:
+    - get: super-app
+      passed: ['Test']
+      trigger: true
+
+    - task: build
       config:
         platform: linux
         image_resource:
           type: docker-image
-          source: {repository: ubuntu}
+          source: {repository: golang}
         run:
-          path: ls
-          args: ["-l"]
-
+          path: sh
+          args:
+          - -exc
+          - |
+            ./scripts/go_deps.sh
+            ./scripts/go_build.sh linux 0.0.1
+            mv super_*_linux_amd64 ../artifact
+          dir: super-app/
         inputs:
           - name: super-app
+        outputs:
+          - name: artifact
+
+    - task: integration test
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: golang}
+        run:
+          path: sh
+          args:
+          - -exc
+          - |
+            ./artifact/super_*_linux_amd64&
+            ./super-app/scripts/test_integration.sh  http://127.0.0.1:8080
+            kill -9 `pgrep super_`
+        inputs:
+          - name: super-app
+          - name: artifact
