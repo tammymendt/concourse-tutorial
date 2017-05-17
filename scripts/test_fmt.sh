@@ -32,4 +32,4 @@ SLEEP_TIME=1
 echo "Sleeping for ${SLEEP_TIME}"
 sleep "${SLEEP_TIME}"
 
-exit 1
+exit "${exit_code}"
