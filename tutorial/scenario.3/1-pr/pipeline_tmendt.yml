@@ -12,6 +12,14 @@ resources:
       repo: tammymendt/concourse-tutorial
       access_token: {{github_token}}
 
+  - name: release-rc
+    type: github-release
+    source:
+      user: tammymendt
+      repository: concourse-tutorial
+      access_token: {{github_token}}
+      pre_release: True
+
 jobs:
   - name: PR unit testing
     plan:
@@ -32,18 +40,10 @@ jobs:
         put: super-app
         params: {path: super-app, context: Unit Tests, status: failure}
 
-  - name: PR lint testing
+  - name: PR building & integration testing
     plan:
     - get: super-app
-      trigger: true
-
-    - task: run lint
-      file: super-app/tutorial/scenario.3/1-pr/tasks/lint.yml
-
-  - name: PR building & integeration testing
-    plan:
-    - get: super-app
-      passed: ["PR unit testing", "PR lint testing"]
+      passed: ["PR unit testing"]
       trigger: true
 
     - task: build
@@ -51,3 +51,28 @@ jobs:
 
     - task: integeration test
       file: super-app/tutorial/scenario.3/1-pr/tasks/integration.yml
+
+  - name: Master build
+    plan:
+    - get: super-app
+      passed: ["PR building & integration testing"]
+      trigger: true
+    - aggregate:
+      - task: build linux
+        file: super-app/tutorial/scenario.4/1-multi-os/tasks/build_linux.yml
+
+      - task: build darwin
+        file: super-app/tutorial/scenario.4/1-multi-os/tasks/build_darwin.yml
+
+      - task: build windows
+        file: super-app/tutorial/scenario.4/1-multi-os/tasks/build_windows.yml
+
+    - put: release-rc
+      params:
+        name: super-app/tutorial/scenario.4/2-releases/version
+        tag : super-app/tutorial/scenario.4/2-releases/version
+        tag_prefix: v
+        globs:
+          - artifact_linux/super_*_linux_amd64
+          - artifact_windows/super_*_windows_amd64
+          - artifact_darwin/super_*_darwin_amd64
