@@ -73,7 +73,6 @@ jobs:
             ./artifact/super_*_linux_amd64&
             ./super-app/scripts/test_integration.sh  http://127.0.0.1:8080
             kill -9 `pgrep super_`
-          dir: super-app/
         inputs:
           - name: super-app
           - name: artifact
