@@ -4,7 +4,7 @@ resources:
     type: git
     branch: ci
     source:
-      uri: https://github.com/hellofresh/concourse-tutorial.git
+      uri: https://github.com/tammymendt/concourse-tutorial.git
 
 jobs:
   - name: Test
@@ -18,8 +18,8 @@ jobs:
           type: docker-image
           source: {repository: ubuntu}
         run:
-          path: ls
-          args: ["-l"]
+          path: ./test_fmt.sh
+          dir: super-app/scripts
 
         inputs:
           - name: super-app
