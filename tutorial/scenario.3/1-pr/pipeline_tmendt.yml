@@ -1,0 +1,45 @@
+---
+resource_types    :
+  - name          : pull-request
+    type          : docker-image
+    source        :
+      repository  : jtarchie/pr
+
+resources:
+  - name: super-app
+    type: pull-request
+    source:
+      repo: tammymendt/concourse-tutorial
+      access_token: {{github_token}}
+
+jobs:
+  - name: PR unit testing
+    plan:
+    - get: super-app
+      trigger: true
+
+    - put: super-app
+      params: {path: super-app, context: Unit Tests, status: pending}
+
+    - task: run unit
+      file: super-app/tutorial/scenario.3/1-pr/tasks/unit.yml
+
+  - name: PR lint testing
+    plan:
+    - get: super-app
+      trigger: true
+
+    - task: run lint
+      file: super-app/tutorial/scenario.3/1-pr/tasks/lint.yml
+
+  - name: PR building & integeration testing
+    plan:
+    - get: super-app
+      passed: ["PR unit testing", "PR lint testing"]
+      trigger: true
+
+    - task: build
+      file: super-app/tutorial/scenario.3/1-pr/tasks/build.yml
+
+    - task: integeration test
+      file: super-app/tutorial/scenario.3/1-pr/tasks/integration.yml
